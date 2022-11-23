@@ -1,59 +1,70 @@
-# bodyclose
+# reuseconn
 
-[![CircleCI](https://circleci.com/gh/timakin/bodyclose.svg?style=svg)](https://circleci.com/gh/timakin/bodyclose)
-
-`bodyclose` is a static analysis tool which checks whether `res.Body` is correctly closed.
+`reuseconn` is a static analysis tool which checks whether `res.Body` is correctly closed and read so that the underlying TCP connection can be reused.
 
 ## Install
 
-You can get `bodyclose` by `go get` command.
+You can get `reuseconn` by `go get` command.
 
 ```bash
-$ go get -u github.com/timakin/bodyclose
+$ go get -u github.com/atzoum/reuseconn
 ```
 
 ## How to use
 
-`bodyclose` run with `go vet` as below when Go is 1.12 and higher.
+`reuseconn` run with `go vet` as below.
 
 ```bash
-$ go vet -vettool=$(which bodyclose) github.com/timakin/go_api/...
-# github.com/timakin/go_api
+$ go vet -vettool=$(which reuseconn) github.com/atzoum/go_api/...
+# github.com/atzoum/go_api
 internal/httpclient/httpclient.go:13:13: response body must be closed
 ```
-
-When Go is lower than 1.12, just run `bodyclose` command with the package name (import path).
 
 But it cannot accept some options such as `--tags`.
 
 ```bash
-$ bodyclose github.com/timakin/go_api/...
-~/go/src/github.com/timakin/api/internal/httpclient/httpclient.go:13:13: response body must be closed
+$ reuseconn github.com/atzoum/go_api/...
+~/go/src/github.com/atzoum/api/internal/httpclient/httpclient.go:13:13: response body must be closed
 ```
 
 ## Analyzer
 
-`bodyclose` validates whether [*net/http.Response](https://golang.org/pkg/net/http/#Response) of HTTP request calls method `Body.Close()` such as below code.
+`reuseconn` validates whether a [*net/http.Response](https://golang.org/pkg/net/http/#Response) of HTTP request is properly disposed after used. E.g.
 
 ```go
-resp, err := http.Get("http://example.com/") // Wrong case
-if err != nil {
-	// handle error
+func main() {
+	resp, err := http.Get("http://example.com/") // Wrong case
+	if err != nil {
+		// handle error
+	}
+	body, err := ioutil.ReadAll(resp.Body)
 }
-body, err := ioutil.ReadAll(resp.Body)
 ```
 
-This code is wrong. You must call resp.Body.Close when finished reading resp.Body.
+The above code is wrong. You must properly dispose `resp.Body` when done. To avoid a scenario where you forget to read the body in some scenarios and the connection is not reused, `reuseconn` enforces disposal to be performed within a single function which performs both operations.
 
 ```go
-resp, err := http.Get("http://example.com/")
-if err != nil {
-	// handle error
+
+func disposeResponseBody(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		// if the body is already read in some scenarios, the below operation becomes a no-op
+		_, _ = io.Copy(io.Discard, resp.Body) 
+		_ = resp.Body.Close()
+	}
 }
-defer resp.Body.Close() // OK
-body, err := ioutil.ReadAll(resp.Body)
+
+func main() {
+	resp, err := http.Get("http://example.com/")
+	defer closeResponseBody(resp) // OK
+	if err != nil {
+		// handle error
+	}
+	if resp2.StatusCode == http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+	}
+}
 ```
 
-In the [GoDoc of Client.Do](https://golang.org/pkg/net/http/#Client.Do) this rule is clearly described.
+In the [GoDoc of http.Response](https://pkg.go.dev/net/http#Response) this rule is clearly described.
 
-If you forget this sentence, a HTTP client cannot re-use a persistent TCP connection to the server for a subsequent "keep-alive" request.
+> It is the caller's responsibility to close Body. The default HTTP client's Transport may not reuse HTTP/1.x "keep-alive" TCP connections if the Body is not read to completion and closed.

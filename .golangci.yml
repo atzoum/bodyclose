@@ -1,43 +1,37 @@
-linters-settings:
-  govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0
-  maligned:
-    suggest-new: true
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  gocritic:
-    enabled-tags:
-    - performance
-    - style
-    - experimental
-    disabled-checks:
-    - wrapperFunc
+run:
+  timeout: 5m
+  go: '1.19'
+  skip-dirs:
+    - enterprise
+    - event-schema
 
 linters:
-  enable-all: true
-  disable:
-  - maligned
-  - prealloc
-  - gochecknoglobals
-
-run:
-  skip-dirs:
-  - passes/bodyclose/testdata
+  enable:
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - bodyclose
+    - decorder
+    - makezero
+    - nilnil
+    - nilerr
+    - rowserrcheck
+    - tenv
+    - wastedassign
+    - unparam
+    - misspell
+    - unconvert
 
 issues:
-  exclude-rules:
-  - text: "weak cryptographic primitive"
-    linters:
-    - gosec
-
-service:
-  golangci-lint-version: 1.15.x # use the fixed version to not introduce new linters unexpectedly
+  exclude-use-default: true
+  exclude-case-sensitive: false
+  max-issues-per-linter: 50
+  max-same-issues: 10
+  new: false

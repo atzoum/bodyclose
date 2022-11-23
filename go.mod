@@ -1,8 +1,14 @@
-module github.com/timakin/bodyclose
+module github.com/atzoum/reuseconn
 
-go 1.12
+go 1.18
 
 require (
-	github.com/gostaticanalysis/analysisutil v0.0.0-20190318220348-4088753ea4d3
-	golang.org/x/tools v0.0.0-20190322203728-c1a832b0ad89
+	github.com/gostaticanalysis/analysisutil v0.7.1
+	golang.org/x/tools v0.3.0
+)
+
+require (
+	github.com/gostaticanalysis/comment v1.4.2 // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 )
