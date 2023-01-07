@@ -1,3 +1,10 @@
+
+<p align="left">
+  <a href="https://github.com/atzoum/reuseconn/actions/workflows/ci.yaml">
+    <img src="https://github.com/atzoum/reuseconn/actions/workflows/ci.yaml/badge.svg">
+  </a>
+</p>
+
 # reuseconn
 
 `reuseconn` is a static analysis tool which checks whether `res.Body` is correctly closed and read so that the underlying TCP connection can be reused.
