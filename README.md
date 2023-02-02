@@ -62,7 +62,7 @@ func disposeResponseBody(resp *http.Response) {
 
 func main() {
 	resp, err := http.Get("http://example.com/")
-	defer closeResponseBody(resp) // OK
+	defer disposeResponseBody(resp) // OK
 	if err != nil {
 		// handle error
 	}
